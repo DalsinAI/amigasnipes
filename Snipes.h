@@ -48,8 +48,17 @@ extern WORD frame;
 
 struct MazeTile
 {
+#ifdef __amigaos__
+	// Big-endian: the game reads a tile as a WORD, color << 8 | chr, as on
+	// the PC, so here the color byte comes first in memory.
+	BYTE color;
+	BYTE chr;
+	MazeTile() {}
+	MazeTile(BYTE color, BYTE chr) : color(color), chr(chr) {}
+#else
 	BYTE chr;
 	BYTE color;
 	MazeTile() {}
 	MazeTile(BYTE color, BYTE chr) : chr(chr), color(color) {}
+#endif
 };

@@ -16,7 +16,7 @@
 #endif
 
 #ifndef __cdecl
-	#if defined(_WIN64) || defined(__x86_64__) || defined(__ppc64__)
+	#if defined(_WIN64) || defined(__x86_64__) || defined(__ppc64__) || defined(__amigaos__)
 	#define __cdecl
 	#elif defined(__GNUC__)
 	#define __cdecl __attribute__((__cdecl__))

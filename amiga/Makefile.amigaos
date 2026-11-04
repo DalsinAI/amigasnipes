@@ -1,0 +1,71 @@
+# Snipes (David Ellsworth's reverse-engineered port of the 1982 game) for
+# AmigaOS 3.x, 68040 + FPU, on acsdl12.
+#
+#   make -f amiga/Makefile.amigaos STOVE=/path/to/openamigagcc \
+#        NDK=/path/to/gfopensdk/OpenNDK/Include_H \
+#        ACSDL=/path/to/amicradle-guest/gameports/acsdl12
+#
+# STOVE is GFOpenAmigaGCC 16.2.0-open4 or later. ACSDL is acsdl12, built with
+# its own Makefile.amigaos (its library holds ACGame and zlib's inflate, so
+# ZLIB is only needed to build acsdl12). The game is upstream's Snipes.cpp;
+# upstream's sdl/ (SDL 2 and SDL2_ttf, a drawing thread) is replaced by
+# amiga/acsdl_console.cpp (screen, keys, clock) and amiga/acsdl_sound.cpp.
+# libgcc's unwinder asks for POSIX thread locks: amiga/pthread_stubs.c.
+# config.h is made from config-sample.h, as upstream's GNUmakefile does.
+# Output: build/amigaos/Snipes/ with the program, its ReadMe, the Replays
+# drawer and the icons, and Snipes.info beside it.
+
+STOVE   ?= $(HOME)/CradleLab/toolchain/openamigagcc-16.2.0-open4-x86_64-linux
+NDK     ?= $(HOME)/CradleLab/gfopensdk/OpenNDK/Include_H
+ACSDL   ?= $(HOME)/CradleLab/guest-sdl/gameports/acsdl12
+ACGAME  ?= $(ACSDL)/../acgame
+ZLIB    ?= $(HOME)/CradleLab/zlib-1.3.1
+CXX     = $(STOVE)/bin/m68k-amigaos-g++
+CC      = $(STOVE)/bin/m68k-amigaos-gcc
+CPU     ?= -m68040 -m68881
+OPT     ?= -O2 -fomit-frame-pointer
+BUILD   = build/amigaos
+OBJDIR  = $(BUILD)/obj
+OUT     = $(BUILD)/Snipes
+INCS    = -I$(OBJDIR) -I$(ACSDL)/include/SDL -I$(ACSDL)/include \
+          -I$(ACGAME)/include -I$(NDK)
+# Upstream's code and the port's build with no warnings at -Wall -Wextra.
+CXXFLAGS = -noixemul -std=gnu++11 $(OPT) $(CPU) -Wall -Wextra $(INCS)
+CFLAGS  = -noixemul $(OPT) $(CPU) -Wall -Wextra
+LDFLAGS = -noixemul $(CPU)
+
+OBJS    = $(OBJDIR)/Snipes.o $(OBJDIR)/acsdl_console.o \
+          $(OBJDIR)/acsdl_sound.o $(OBJDIR)/pthread_stubs.o $(OBJDIR)/stack.o
+HDRS    = $(wildcard *.h) $(OBJDIR)/config.h amiga/cp437_font.h
+ICONS   = amiga/icons/Snipes-drawer.info amiga/icons/Snipes.info \
+          amiga/icons/ReadMe.info amiga/icons/Replays.info
+
+all: $(OUT)/Snipes
+
+$(OUT)/Snipes: $(OBJS) $(ICONS) AMIGA_PORT.md | $(OUT)
+	$(CXX) $(LDFLAGS) -o $@ $(OBJS) $(ACSDL)/build/amigaos/libacsdl12.a -lm
+	mkdir -p $(OUT)/Replays
+	cp AMIGA_PORT.md $(OUT)/ReadMe
+	cp amiga/icons/Snipes.info amiga/icons/ReadMe.info \
+	   amiga/icons/Replays.info $(OUT)/
+	cp amiga/icons/Snipes-drawer.info $(BUILD)/Snipes.info
+
+$(OBJDIR)/config.h: config-sample.h | $(OBJDIR)
+	cp config-sample.h $@
+
+$(OBJDIR)/Snipes.o: Snipes.cpp $(HDRS) | $(OBJDIR)
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+$(OBJDIR)/%.o: amiga/%.cpp $(HDRS) | $(OBJDIR)
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+$(OBJDIR)/%.o: amiga/%.c | $(OBJDIR)
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(OBJDIR) $(OUT):
+	mkdir -p $@
+
+clean:
+	rm -rf $(BUILD)
+
+.PHONY: all clean
