@@ -67,6 +67,30 @@ WORD GetRandomRanged()
 Uint skillLevelLetter = 0;
 Uint skillLevelNumber = 1;
 
+#ifdef __amigaos__
+// Big-endian: a replay file starts with the two random seeds as
+// little-endian WORDs and the skill letter and number a byte each, as the
+// PC writes them (it writes the low byte of each), so a PC's replays play
+// here and ours there. A skill out of range would index past the tables.
+static bool ReadReplayHeader(FILE *f)
+{
+	BYTE header[6];
+	if (fread(header, 1, sizeof(header), f) != sizeof(header) || header[4] > 'Z'-'A' || !inrange(header[5], 1, 9))
+		return false;
+	random_seed_lo = header[0] | header[1] << 8;
+	random_seed_hi = header[2] | header[3] << 8;
+	skillLevelLetter = header[4];
+	skillLevelNumber = header[5];
+	return true;
+}
+static void WriteReplayHeader(FILE *f)
+{
+	const BYTE header[6] = {(BYTE)random_seed_lo, (BYTE)(random_seed_lo >> 8), (BYTE)random_seed_hi, (BYTE)(random_seed_hi >> 8),
+							(BYTE)skillLevelLetter, (BYTE)skillLevelNumber};
+	fwrite(header, 1, sizeof(header), f);
+}
+#endif
+
 void ParseSkillLevel(char *skillLevel, DWORD skillLevelLength)
 {
 	Uint skillLevelNumberTmp = 0;
@@ -178,7 +202,11 @@ struct Coord
 {
 	union
 	{
+#ifdef __amigaos__
+		struct {BYTE y,x;}; // big-endian: xy is still y << 8 | x, as on the PC
+#else
 		struct {BYTE x,y;};
+#endif
 		WORD xy;
 	};
 	Coord &operator=(WORD _xy) {xy = _xy; return *this;}
@@ -192,6 +220,12 @@ typedef WORD sprite SpritePointer; // FAKE_POINTER to current sprite frame
 typedef const WORD *SpritePointer;
 #endif
 
+#ifdef __amigaos__
+#define COORD_BYTES BYTE y, x; // big-endian: in the same places as Coord's
+#else
+#define COORD_BYTES BYTE x, y;
+#endif
+
 #define DEFINE_ANCESTOR(parent) operator parent&() {return *(parent*)this;}
 #define DEFINE_OBJECT_AND_MEMBERS(className,member1,member2,member3,memberFunctions) \
 struct className\
@@ -200,7 +234,7 @@ struct className\
 	member1;\
 	union\
 	{\
-		struct {BYTE x, y;};\
+		struct {COORD_BYTES};\
 		Coord xy;\
 	};\
 	member2;\
@@ -485,7 +519,12 @@ BYTE CreateNewObject()
 
 #define EXPLOSION_SIZE(x,y) ((y)*10+(x))
 
+#ifdef __amigaos__
+// Big-endian: a sprite's first WORD is read as two bytes, height first.
+#define SPRITE_SIZE(x,y) (((y)<<8)+(x))
+#else
 #define SPRITE_SIZE(x,y) (((x)<<8)+(y))
+#endif
 
 // snipe portal
 static const WORD data_1002[] = {SPRITE_SIZE(2,2), 0xFDA, 0xEBF, 0xDC0, 0xCD9};
@@ -1122,7 +1161,7 @@ struct OrthoDistanceInfo
 {
 	union
 	{
-		struct {BYTE x, y;};
+		struct {COORD_BYTES};
 		Coord xy;
 	};
 	MoveDirection direction;
@@ -2258,10 +2297,18 @@ extern "C" int __cdecl SDL_main(int argc, char* argv[])
 					} \
 				} while (0)
 
+#ifdef __amigaos__
+			if (!ReadReplayHeader(replayFile))
+			{
+				fprintf(stderr, "Error reading from replay file \"%s\" for playback\n", replayPlaybackFilename);
+				goto do_not_play_again;
+			}
+#else
 			fread_all(&random_seed_lo, sizeof(random_seed_lo), 1, replayFile);
 			fread_all(&random_seed_hi, sizeof(random_seed_hi), 1, replayFile);
 			fread_all(&skillLevelLetter, 1, 1, replayFile);
 			fread_all(&skillLevelNumber, 1, 1, replayFile);
+#endif
 
 			#undef fread_all
 		}
@@ -2273,6 +2320,9 @@ extern "C" int __cdecl SDL_main(int argc, char* argv[])
 
 			char replayFilename[1024];
 			sprintf(replayFilename,
+#ifdef __amigaos__
+					"PROGDIR:Replays/" // the game's own drawer, wherever it is started from
+#endif
 					"%04d-%02d-%02d %02d.%02d.%02d.SnipesGame",
 					1900+rectime_gmt->tm_year, rectime_gmt->tm_mon+1, rectime_gmt->tm_mday,
 					rectime_gmt->tm_hour, rectime_gmt->tm_min, rectime_gmt->tm_sec);
@@ -2285,10 +2335,14 @@ extern "C" int __cdecl SDL_main(int argc, char* argv[])
 			if (replayFile)
 			{
 				setvbuf(replayFile, NULL, _IOFBF, 64);
+#ifdef __amigaos__
+				WriteReplayHeader(replayFile);
+#else
 				fwrite(&random_seed_lo, sizeof(random_seed_lo), 1, replayFile);
 				fwrite(&random_seed_hi, sizeof(random_seed_hi), 1, replayFile);
 				fwrite(&skillLevelLetter, 1, 1, replayFile);
 				fwrite(&skillLevelNumber, 1, 1, replayFile);
+#endif
 			}
 		}
 
@@ -2415,10 +2469,14 @@ extern "C" int __cdecl SDL_main(int argc, char* argv[])
 
 					fflush(replayFile);
 					fseek(replayFile, 0, SEEK_SET);
+#ifdef __amigaos__
+					WriteReplayHeader(replayFile);
+#else
 					fwrite(&random_seed_lo, sizeof(random_seed_lo), 1, replayFile);
 					fwrite(&random_seed_hi, sizeof(random_seed_hi), 1, replayFile);
 					fwrite(&skillLevelLetter, 1, 1, replayFile);
 					fwrite(&skillLevelNumber, 1, 1, replayFile);
+#endif
 					goto restart;
 				}
 			}
