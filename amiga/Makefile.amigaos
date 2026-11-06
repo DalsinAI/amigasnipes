@@ -3,7 +3,9 @@
 #
 #   make -f amiga/Makefile.amigaos STOVE=/path/to/openamigagcc \
 #        NDK=/path/to/gfopensdk/OpenNDK/Include_H \
-#        ACSDL=/path/to/amicradle-guest/gameports/acsdl12
+#        ACSDL=/path/to/amicradle-guest/gameports/acsdl12 \
+#        ACSDLLIB=/path/to/acsdl12/build ACGAME=/path/to/acgame \
+#        ACGAMELIB=/path/to/acgame/build-amiga
 #
 # STOVE is GFOpenAmigaGCC 16.2.0-open4 or later. ACSDL is acsdl12, built with
 # its own Makefile.amigaos (its library holds ACGame and zlib's inflate, so
@@ -12,13 +14,18 @@
 # amiga/acsdl_console.cpp (screen, keys, clock) and amiga/acsdl_sound.cpp.
 # libgcc's unwinder asks for POSIX thread locks: amiga/pthread_stubs.c.
 # config.h is made from config-sample.h, as upstream's GNUmakefile does.
+# acsdl12 is built with ACG= into ACSDLLIB, without its own copy of ACGame:
+# the game gets ACGame from acgame.library, through ACGAMELIB's libacgame.a
+# (DalsinAI/acgame's stubs). package/acgame-deps.sh builds both.
 # Output: build/amigaos/Snipes/ with the program, its ReadMe, the Replays
 # drawer and the icons, and Snipes.info beside it.
 
 STOVE   ?= $(HOME)/CradleLab/toolchain/openamigagcc-16.2.0-open4-x86_64-linux
 NDK     ?= $(HOME)/CradleLab/gfopensdk/OpenNDK/Include_H
 ACSDL   ?= $(HOME)/CradleLab/guest-sdl/gameports/acsdl12
+ACSDLLIB ?= $(ACSDL)/build/amigaos
 ACGAME  ?= $(ACSDL)/../acgame
+ACGAMELIB ?= $(ACGAME)/build-amiga
 ZLIB    ?= $(HOME)/CradleLab/zlib-1.3.1
 CXX     = $(STOVE)/bin/m68k-amigaos-g++
 CC      = $(STOVE)/bin/m68k-amigaos-gcc
@@ -43,7 +50,7 @@ ICONS   = amiga/icons/Snipes-drawer.info amiga/icons/Snipes.info \
 all: $(OUT)/Snipes
 
 $(OUT)/Snipes: $(OBJS) $(ICONS) AMIGA_PORT.md | $(OUT)
-	$(CXX) $(LDFLAGS) -o $@ $(OBJS) $(ACSDL)/build/amigaos/libacsdl12.a -lm
+	$(CXX) $(LDFLAGS) -o $@ $(OBJS) $(ACSDLLIB)/libacsdl12.a $(ACGAMELIB)/libacgame.a -lm
 	mkdir -p $(OUT)/Replays
 	cp AMIGA_PORT.md $(OUT)/ReadMe
 	cp amiga/icons/Snipes.info amiga/icons/ReadMe.info \

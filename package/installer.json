@@ -1,0 +1,15 @@
+{
+  "name": "Snipes",
+  "version": "0.0-amiga2",
+  "drawer": "Snipes",
+  "program": "Snipes",
+  "cpu": "68040",
+  "fpu": true,
+  "space": 2000000,
+  "modules": [],
+  "keep": [
+    "Replays"
+  ],
+  "parent": "Work:Games",
+  "badge": "../amiga/icons/art/snipes.png"
+}
