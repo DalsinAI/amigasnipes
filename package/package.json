@@ -1,0 +1,62 @@
+{
+  "drawer": "Snipes",
+  "drawer_icon": "amiga/icons/Snipes-drawer.info",
+  "archive": "snipes-{version}-68040",
+  "members": [
+    {
+      "name": "Snipes",
+      "build": "Snipes",
+      "check": "executable_sha256"
+    },
+    {
+      "name": "Libs/acgame.library",
+      "build": "acgame.library",
+      "check": "acgame_library_sha256"
+    },
+    {
+      "name": "",
+      "tar": "drawer.tar"
+    }
+  ],
+  "aminet": [
+    [
+      "Short",
+      "Snipes, the 1982 text-mode maze shooter, 68040+FPU"
+    ],
+    [
+      "Author",
+      "SuperSet Software (1982); David Ellsworth (port); Amiga port: AmiCradle Team"
+    ],
+    [
+      "Uploader",
+      "AmiCradle Team"
+    ],
+    [
+      "Type",
+      "game/shoot"
+    ],
+    [
+      "Version",
+      "{version}"
+    ],
+    [
+      "Requires",
+      "AmigaOS 3.x, 68040/68060 with FPU, AGA or RTG, AHI"
+    ],
+    [
+      "Architecture",
+      "m68k-amigaos >= 3.0"
+    ]
+  ],
+  "root": [
+    {
+      "name": "Install-Snipes",
+      "repo": "package/installer/Install-Snipes",
+      "installer": true
+    },
+    {
+      "name": "Install-Snipes.info",
+      "repo": "package/installer/Install-Snipes.info"
+    }
+  ]
+}

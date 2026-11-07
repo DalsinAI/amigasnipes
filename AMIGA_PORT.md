@@ -7,6 +7,16 @@ identical game logic, for AmigaOS 3.x on a 68040 with FPU, on acsdl12, our
 SDL 1.2 for game ports (ACGame's screen, AHI sound).
 Upstream: https://github.com/Davidebyzero/Snipes at caa2ce0.
 
+Installing
+----------
+
+Unpack the archive anywhere (on AmiCradle: SYS:Utilities/OpenCompress x
+snipes-...lha RAM:), then double-click Install-Snipes beside the Snipes
+drawer: it asks where to put the game (Work:Games by default) and keeps
+the Replays drawer of an earlier install. The drawer's Libs holds the
+acgame.library the game was built against, and the game opens that copy
+first.
+
 Running
 -------
 
@@ -92,7 +102,12 @@ warns, so __cdecl is empty here.
 Building
 --------
 
-    make -f amiga/Makefile.amigaos STOVE=... NDK=... ACSDL=...
+    make -f amiga/Makefile.amigaos STOVE=... NDK=... ACSDL=... ACSDLLIB=... \
+         ACGAME=... ACGAMELIB=...
+
+or, for the release archive with its installer, package/build-amiga.sh
+(STOVE and OUT set; it fetches and builds acgame, acsdl12 and zlib at
+pinned commits).
 
 Output: build/amigaos/Snipes/ (and its Snipes.info beside it). config.h
 is made from config-sample.h, as upstream's GNUmakefile does. libgcc's
