@@ -115,9 +115,8 @@ unwinder asks for POSIX thread locks: amiga/pthread_stubs.c. The stack is
 128 KB (amiga/stack.c).
 
 The icons are amiga/icons, made by AmiCradle's port_icons.py from
-amiga/icons/icons.json; the art (amiga/icons/art/snipes.png, made by
-amiga/tools/make_icon_art.py) is a corner of the game's maze with a snipe
-and the player, in its own characters and colours.
+amiga/icons/icons.json; the art (amiga/icons/art/snipes.svg, rendered as
+snipes.png) is our own GlowIcon of the player in the maze.
 
 Licence
 -------
